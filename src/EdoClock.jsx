@@ -149,7 +149,6 @@ const EdoClockFinal = () => {
           </svg>
           
           <div style={tokiOverlayStyle}>
-            {/* 縦書き・Yuji Syuku適用のメイン文字 */}
             <div style={tokiNameStyle}>{edoTime?.name}</div>
             <div style={zodiacStyle}>
               {edoTime?.zodiac}の刻
@@ -158,8 +157,8 @@ const EdoClockFinal = () => {
         </div>
 
         <div style={infoPanelStyle}>
-          <p style={{ fontSize: '1.1rem', letterSpacing: '1px' }}>次の一刻まで 約 {edoTime?.nextTokiIn} 分</p>
-          <p style={{ opacity: 0.6, fontSize: '0.9rem', marginTop: '10px', fontWeight: 'bold' }}>
+          <p style={{ fontSize: '1rem', letterSpacing: '1px', margin: '0' }}>次の一刻まで 約 {edoTime?.nextTokiIn} 分</p>
+          <p style={{ opacity: 0.6, fontSize: '0.8rem', marginTop: '5px', fontWeight: 'bold' }}>
              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
           
@@ -170,7 +169,10 @@ const EdoClockFinal = () => {
       </main>
 
       <footer style={footerStyle}>
-        基準: {coords.lat === NIHONBASHI.lat ? "江戸（日本橋）" : "現在地"}
+        <div>基準: {coords.lat === NIHONBASHI.lat ? "江戸（日本橋）" : "現在地"}</div>
+        <div style={{ marginTop: '15px' }}>
+          効果音提供 <a href="https://otologic.jp" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>OtoLogic</a>
+        </div>
       </footer>
     </div>
   );
@@ -198,12 +200,12 @@ const containerStyle = (isDay) => ({
 });
 
 const headerStyle = { padding: '15px', textAlign: 'center', fontSize: '0.9rem', letterSpacing: '3px', flexShrink: 0 };
-const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px' };
+const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5px' };
 
 const clockWrapperStyle = {
  position: 'relative',
- width: 'min(75vw, 55vh)', // 円を少し大きく調整
- height: 'min(75vw, 55vh)',
+ width: 'min(75vw, 50vh)', 
+ height: 'min(75vw, 50vh)',
  margin: '0 auto'
 };
 
@@ -217,16 +219,14 @@ const tokiOverlayStyle = {
  flexDirection: 'column',
  alignItems: 'center',
  justifyContent: 'center',
- width: '80%' // 円の内側に収めるためのガード
+ width: '80%'
 };
 
 const tokiNameStyle = {
- // 縦書き設定
  writingMode: 'vertical-rl',
  textOrientation: 'upright',
- // 円からはみ出さない動的なフォントサイズ
- fontSize: 'clamp(2rem, 18vw, 5rem)', 
- fontWeight: 'normal', // Yuji Syukuはnormalが一番綺麗です
+ fontSize: 'clamp(2rem, 16vw, 4.5rem)', 
+ fontWeight: 'normal',
  color: '#d9333f',
  lineHeight: '1.1',
  letterSpacing: '0.05em',
@@ -234,17 +234,17 @@ const tokiNameStyle = {
 };
 
 const zodiacStyle = {
- fontSize: 'clamp(0.8rem, 4vw, 1.2rem)',
+ fontSize: 'clamp(0.8rem, 4vw, 1.1rem)',
  color: '#c4a358',
- marginTop: '10px',
- writingMode: 'horizontal-tb' // 十二支は横書きでバランスをとる
+ marginTop: '8px',
+ writingMode: 'horizontal-tb'
 };
 
-const infoPanelStyle = { textAlign: 'center', marginTop: '1.5rem', zIndex: 10 };
+const infoPanelStyle = { textAlign: 'center', marginTop: '1rem', zIndex: 10 };
 const shareButtonStyle = {
- marginTop: '15px', padding: '10px 25px', borderRadius: '25px', border: 'none',
- backgroundColor: '#333', color: 'white', cursor: 'pointer', fontSize: '0.8rem', zIndex: 100
+ marginTop: '10px', padding: '8px 20px', borderRadius: '25px', border: 'none',
+ backgroundColor: '#333', color: 'white', cursor: 'pointer', fontSize: '0.75rem', zIndex: 100
 };
-const footerStyle = { padding: '15px', textAlign: 'center', fontSize: '0.7rem', opacity: 0.6, flexShrink: 0 };
+const footerStyle = { padding: '20px', textAlign: 'center', fontSize: '0.7rem', opacity: 0.6, flexShrink: 0 };
 
 export default EdoClockFinal;
