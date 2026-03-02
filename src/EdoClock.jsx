@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useReducer } from 'react';
 import SunCalc from 'suncalc';
 
 /**
- * 江戸時間（不定時法）情緒配色版
+ * 江戸時間（不定時法）スマホ最適化・2色切り替え版
  */
 const EdoClockFinal = () => {
   const NIHONBASHI = { lat: 35.6839, lng: 139.7745 };
@@ -27,7 +27,6 @@ const EdoClockFinal = () => {
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
-    // 効果音のパスは環境に合わせて調整してください
     audioRef.current = new Audio('/sounds/Bonsho03-3(Far-High).mp3'); 
     audioRef.current.volume = 0.6;
   }, []);
@@ -39,27 +38,12 @@ const EdoClockFinal = () => {
     }
   };
 
-  // 時間帯（明け・昼・暮れ・夜）を判定する関数
-  const getPeriodType = (date, sunrise, sunset) => {
-    const hour = date.getHours();
-    if (date >= sunrise && date < sunset) {
-      // 昼間の中で、日の出から2時間程度を「明け」とする
-      const hoursSinceSunrise = (date - sunrise) / 3600000;
-      return hoursSinceSunrise < 2 ? 'ake' : 'hiru';
-    } else {
-      // 夜間の中で、日没から2時間程度を「暮れ」とする
-      const hoursSinceSunset = (date - sunset) / 3600000;
-      return (hoursSinceSunset >= 0 && hoursSinceSunset < 2) ? 'kure' : 'yoru';
-    }
-  };
-
   const calculateEdoTime = (date, lat, lng) => {
     const times = SunCalc.getTimes(date, lat, lng);
     const sunrise = times.sunrise;
     const sunset = times.sunset;
 
     const isDay = date >= sunrise && date < sunset;
-    const periodType = getPeriodType(date, sunrise, sunset);
     
     let periodStart, periodEnd, names, zodiacs;
 
@@ -92,7 +76,6 @@ const EdoClockFinal = () => {
       zodiac: zodiacs[index] || "不明",
       progress: progress,
       isDay: isDay,
-      periodType: periodType,
       nextTokiIn: Math.max(0, Math.round((tokiLength - (elapsed % tokiLength)) / 60000))
     };
   };
@@ -136,27 +119,15 @@ const EdoClockFinal = () => {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
   };
 
-  // 時間帯に応じたカラーパレットを取得
-  const getColors = (type) => {
-    switch (type) {
-      case 'ake':  // 明け
-        return { bg: '#FDF5E6', text: '#4A4A4A', accent: '#FF8C00', zodiac: '#8B4513' };
-      case 'kure': // 暮れ
-        return { bg: '#FFF5EE', text: '#2F4F4F', accent: '#FF4500', zodiac: '#A52A2A' };
-      case 'yoru': // 夜
-        return { bg: '#1A1A1B', text: '#C0C0C0', accent: '#FFD700', zodiac: '#DAA520' };
-      case 'hiru': // 昼
-      default:
-        return { bg: '#F9F9F9', text: '#333333', accent: '#d9333f', zodiac: '#c4a358' };
-    }
-  };
-
-  const colors = getColors(edoTime?.periodType);
+  // 指定された2色に切り替え
+  const colors = edoTime?.isDay 
+    ? { bg: '#F9F9F9', text: '#333333', accent: '#D72638' } // 日の出(昼)
+    : { bg: '#1A1A1B', text: '#C0C0C0', accent: '#FFD700' }; // 日の入り(夜)
 
   if (!isAudioEnabled) {
     return (
       <div style={fullScreenCenter}>
-        <h1 style={{ color: '#d9333f', fontFamily: '"Yuji Syuku", serif', fontSize: '2.5rem' }}>和時計</h1>
+        <h1 style={{ color: '#D72638', fontFamily: '"Yuji Syuku", serif', fontSize: '2.5rem' }}>和時計</h1>
         <button onClick={() => { setIsAudioEnabled(true); playBell(); }} style={startButtonStyle}>
           いざ、江戸時間へ
         </button>
@@ -173,7 +144,7 @@ const EdoClockFinal = () => {
       <main style={mainStyle}>
         <div style={clockWrapperStyle}>
           <svg viewBox="0 0 100 100" style={svgStyle}>
-            <circle cx="50" cy="50" r="46" fill="none" stroke={colors.text} strokeWidth="0.2" opacity="0.1" />
+            <circle cx="50" cy="50" r="46" fill="none" stroke={colors.text} strokeWidth="0.1" opacity="0.1" />
             <circle 
               cx="50" cy="50" r="46" fill="none" stroke={colors.accent} strokeWidth="2.5" 
               strokeDasharray="289" 
@@ -185,15 +156,15 @@ const EdoClockFinal = () => {
           
           <div style={tokiOverlayStyle}>
             <div style={{...tokiNameStyle, color: colors.accent}}>{edoTime?.name}</div>
-            <div style={{...zodiacStyle, color: colors.zodiac}}>
+            <div style={{...zodiacStyle, color: colors.text, opacity: 0.8}}>
               {edoTime?.zodiac}の刻
             </div>
           </div>
         </div>
 
         <div style={infoPanelStyle}>
-          <p style={{ fontSize: '1rem', letterSpacing: '1px', margin: '0' }}>次の一刻まで 約 {edoTime?.nextTokiIn} 分</p>
-          <p style={{ opacity: 0.6, fontSize: '0.8rem', marginTop: '5px', fontWeight: 'bold' }}>
+          <p style={{ fontSize: '0.9rem', letterSpacing: '1px', margin: '0' }}>次の一刻まで 約 {edoTime?.nextTokiIn} 分</p>
+          <p style={{ opacity: 0.6, fontSize: '0.75rem', marginTop: '5px', fontWeight: 'bold' }}>
              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
           
@@ -205,7 +176,7 @@ const EdoClockFinal = () => {
 
       <footer style={footerStyle}>
         <div>基準: {coords.lat === NIHONBASHI.lat ? "江戸（日本橋）" : "現在地"}</div>
-        <div style={{ marginTop: '15px' }}>
+        <div style={{ marginTop: '10px' }}>
           効果音提供 <a href="https://otologic.jp" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>OtoLogic</a>
         </div>
       </footer>
@@ -216,13 +187,13 @@ const EdoClockFinal = () => {
 // --- スタイル定義 ---
 const fullScreenCenter = {
  height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column',
- alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f0',
- color: '#1a1a1a', fontFamily: '"Yuji Syuku", serif', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
+ alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9F9F9',
+ color: '#333333', fontFamily: '"Yuji Syuku", serif', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
 };
 
 const startButtonStyle = {
  marginTop: '2rem', padding: '12px 40px', fontSize: '1.2rem',
- backgroundColor: 'transparent', color: '#d9333f', border: '2px solid #d9333f',
+ backgroundColor: 'transparent', color: '#D72638', border: '2px solid #D72638',
  borderRadius: '4px', cursor: 'pointer', fontFamily: '"Yuji Syuku", serif'
 };
 
@@ -234,13 +205,13 @@ const containerStyle = (bg, text) => ({
  overflow: 'hidden', boxSizing: 'border-box'
 });
 
-const headerStyle = { padding: '15px', textAlign: 'center', fontSize: '0.9rem', letterSpacing: '3px', flexShrink: 0 };
-const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5px' };
+const headerStyle = { padding: '10px', textAlign: 'center', fontSize: '0.8rem', letterSpacing: '2px', flexShrink: 0 };
+const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px' };
 
 const clockWrapperStyle = {
  position: 'relative',
- width: 'min(75vw, 50vh)', 
- height: 'min(75vw, 50vh)',
+ width: 'min(80vw, 45vh)', // スマホでの最大幅を少し拡大
+ height: 'min(80vw, 45vh)',
  margin: '0 auto'
 };
 
@@ -254,32 +225,35 @@ const tokiOverlayStyle = {
  flexDirection: 'column',
  alignItems: 'center',
  justifyContent: 'center',
- width: '80%'
+ width: '100%',
+ height: '100%'
 };
 
 const tokiNameStyle = {
  writingMode: 'vertical-rl',
  textOrientation: 'upright',
- fontSize: 'clamp(2rem, 16vw, 4.5rem)', 
+ // clampの下限値を少し下げ、最大値を円の高さの60%程度に制限してはみ出しを防止
+ fontSize: 'clamp(1.5rem, 12vw, 3.5rem)', 
+ maxHeight: '70%', 
  fontWeight: 'normal',
- lineHeight: '1.1',
- letterSpacing: '0.05em',
+ lineHeight: '1',
+ letterSpacing: '0.02em',
  whiteSpace: 'nowrap',
  transition: 'color 1.5s ease'
 };
 
 const zodiacStyle = {
- fontSize: 'clamp(0.8rem, 4vw, 1.1rem)',
- marginTop: '8px',
+ fontSize: 'clamp(0.7rem, 3.5vw, 0.9rem)',
+ marginTop: '10px',
  writingMode: 'horizontal-tb',
  transition: 'color 1.5s ease'
 };
 
-const infoPanelStyle = { textAlign: 'center', marginTop: '1rem', zIndex: 10 };
+const infoPanelStyle = { textAlign: 'center', marginTop: '1.5rem', zIndex: 10 };
 const shareButtonStyle = {
- marginTop: '10px', padding: '8px 20px', borderRadius: '25px', border: 'none',
- cursor: 'pointer', fontSize: '0.75rem', zIndex: 100, transition: 'all 1.5s ease'
+ marginTop: '12px', padding: '8px 24px', borderRadius: '25px', border: 'none',
+ cursor: 'pointer', fontSize: '0.7rem', zIndex: 100, transition: 'all 1.5s ease'
 };
-const footerStyle = { padding: '20px', textAlign: 'center', fontSize: '0.7rem', opacity: 0.6, flexShrink: 0 };
+const footerStyle = { padding: '15px', textAlign: 'center', fontSize: '0.65rem', opacity: 0.6, flexShrink: 0 };
 
 export default EdoClockFinal;
