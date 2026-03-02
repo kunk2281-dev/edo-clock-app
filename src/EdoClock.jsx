@@ -3,10 +3,11 @@ import SunCalc from 'suncalc';
 
 /**
  * 江戸時間（不定時法）進捗レール可視化・スマホ最適化版
- * 鐘ボタン拡大 ＋ 下部クレジット見切れ防止調整
+ * 投げ銭ボタン（お茶代を奢る）追加
  */
 const EdoClockFinal = () => {
   const NIHONBASHI = { lat: 35.6839, lng: 139.7745 };
+  const STRIPE_URL = "https://donate.stripe.com/14A14pdw9fCA6pHcNBdby04";
   
   // State管理
   const [edoTime, setEdoTime] = useState(null);
@@ -203,6 +204,16 @@ const EdoClockFinal = () => {
               LINEで送る
             </button>
           </div>
+
+          {/* --- 投げ銭箱（お茶代を奢る）セクション --- */}
+          <div style={donationContainerStyle}>
+            <a href={STRIPE_URL} target="_blank" rel="noopener noreferrer" style={donationLinkStyle}>
+              <img src="/nagesenbako.png" alt="投げ銭箱" style={donationImageStyle} />
+              <span style={{ fontSize: '0.8rem', display: 'block', marginTop: '4px', opacity: 0.9 }}>
+                わちきにお茶代を奢る🍵
+              </span>
+            </a>
+          </div>
         </div>
       </main>
 
@@ -239,20 +250,19 @@ const containerStyle = (bg, text) => ({
 
 const headerStyle = { padding: '10px 10px 5px', textAlign: 'center', fontSize: '0.8rem', letterSpacing: '2px', flexShrink: 0 };
 
-// mainを上詰めに変更
 const mainStyle = { 
   flex: 1, 
   display: 'flex', 
   flexDirection: 'column', 
   alignItems: 'center', 
-  justifyContent: 'flex-start', // 中央ではなく上から並べる
+  justifyContent: 'flex-start',
   padding: '10px 10px 0',
   overflowY: 'auto' 
 };
 
 const clockWrapperStyle = {
   position: 'relative',
-  width: 'min(60vw, 35vh)', // 画面占有率をわずかに下げて余裕を持たせる
+  width: 'min(60vw, 35vh)',
   height: 'min(60vw, 35vh)',
   margin: '10px auto'
 };
@@ -320,7 +330,6 @@ const bellImageStyle = {
   filter: 'drop-shadow(0px 3px 6px rgba(0,0,0,0.3))'
 };
 
-// マージンを削減
 const infoPanelStyle = { textAlign: 'center', marginTop: '0.5rem', zIndex: 10 };
 
 const buttonGroupStyle = {
@@ -337,9 +346,32 @@ const shareButtonStyle = {
   fontWeight: 'bold', fontFamily: 'sans-serif' 
 };
 
-// フッターを少し上に持ち上げる
+// 投げ銭箱のスタイル
+const donationContainerStyle = {
+  marginTop: '25px',
+  marginBottom: '10px',
+  display: 'flex',
+  justifyContent: 'center'
+};
+
+const donationLinkStyle = {
+  textDecoration: 'none',
+  color: 'inherit',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  transition: 'transform 0.2s ease'
+};
+
+const donationImageStyle = {
+  width: '60px',
+  height: 'auto',
+  cursor: 'pointer',
+  filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.2))'
+};
+
 const footerStyle = { 
-  padding: '10px 15px 25px', // 下に少し余白を持たせてOSのホームバー回避
+  padding: '10px 15px 25px',
   textAlign: 'center', 
   fontSize: '0.65rem', 
   opacity: 0.6, 
