@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef, useReducer } from 'react';
 import SunCalc from 'suncalc';
 
 /**
- * 江戸時間（不定時法）進捗レール可視化・スマホ完全最適化版
+ * 江戸時間（不定時法）進捗レール可視化・スマホ最適化版
+ * LINEシェアボタン追加 Ver.
  */
 const EdoClockFinal = () => {
   const NIHONBASHI = { lat: 35.6839, lng: 139.7745 };
   
+  // State管理
   const [edoTime, setEdoTime] = useState(null);
-  const [coords, setCoords] = useState(NIHONBASHI); 
+  const [coords, setCoords] = useState(NIHONBASHI);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -17,6 +19,7 @@ const EdoClockFinal = () => {
   const audioRef = useRef(null);
   const timerRef = useRef(null);
 
+  // 1. Google Fonts の読み込みを動的に追加
   useEffect(() => {
     if (!document.getElementById('google-font-yuji')) {
       const link = document.createElement('link');
@@ -25,21 +28,14 @@ const EdoClockFinal = () => {
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
-    // 音源のプリロード設定
-    const audio = new Audio('https://otologic.jp/free/se/bin/Bonsho03-3(Far-High).mp3'); 
-    audio.volume = 0.6;
-    audio.preload = "auto";
-    audioRef.current = audio;
+    audioRef.current = new Audio('/sounds/Bonsho03-3(Far-High).mp3');
+    audioRef.current.volume = 0.6;
   }, []);
 
   const playBell = () => {
     if (audioRef.current && isAudioEnabled) {
       audioRef.current.currentTime = 0;
-      // スマホの省エネ制限対策としてPromiseをハンドル
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(e => console.log("再生がブロックされました。画面をタップしてください。"));
-      }
+      audioRef.current.play().catch(e => console.error("Audio Error:", e));
     }
   };
 
@@ -47,6 +43,7 @@ const EdoClockFinal = () => {
     const times = SunCalc.getTimes(date, lat, lng);
     const sunrise = times.sunrise;
     const sunset = times.sunset;
+
     const isDay = date >= sunrise && date < sunset;
     
     let periodStart, periodEnd, names, zodiacs;
@@ -66,11 +63,10 @@ const EdoClockFinal = () => {
 
     const tokiLength = (periodEnd - periodStart) / 6;
     const elapsed = date - periodStart;
-    const index = Math.max(0, Math.min(Math.floor(elapsed / tokiLength), 5));
-    const currentName = names[index];
+    const index = Math.min(Math.floor(elapsed / tokiLength), 5);
+    const currentName = names[index] || "刻の境";
     const progress = (elapsed % tokiLength) / tokiLength * 100;
 
-    // 刻が変わった瞬間の判定（初回実行時は鳴らさない）
     if (prevTokiName.current && prevTokiName.current !== currentName) {
       playBell();
     }
@@ -78,7 +74,7 @@ const EdoClockFinal = () => {
 
     return {
       name: currentName,
-      zodiac: zodiacs[index],
+      zodiac: zodiacs[index] || "不明",
       progress: progress,
       isDay: isDay,
       nextTokiIn: Math.max(0, Math.round((tokiLength - (elapsed % tokiLength)) / 60000))
@@ -89,7 +85,8 @@ const EdoClockFinal = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        null, { enableHighAccuracy: true }
+        null,
+        { enableHighAccuracy: true }
       );
     }
   }, []);
@@ -98,35 +95,48 @@ const EdoClockFinal = () => {
     const update = () => {
       const now = new Date();
       setCurrentTime(now);
-      setEdoTime(calculateEdoTime(now, coords.lat, coords.lng));
+      setEdoTime(() => calculateEdoTime(now, coords.lat, coords.lng));
       forceUpdate();
     };
-    
     update();
     timerRef.current = setInterval(update, 1000);
-
-    // スマホのバックグラウンド復帰対策
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        update(); 
+        update();
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(update, 1000);
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
-    
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [coords.lat, coords.lng, isAudioEnabled]);
 
+  // シェア用テキスト生成
+  const getShareText = () => {
+    const timeStr = currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    return `【江戸時間】今は「${edoTime?.name} (${edoTime?.zodiac}の刻)」。\n現代時刻で ${timeStr} 頃です。`;
+  };
+
   const shareOnX = (e) => {
     e.stopPropagation();
-    const text = `【江戸時間】今は「${edoTime?.name}」。\n ${currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 頃。`;
+    const text = getShareText();
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
   };
 
-  const colors = edoTime?.isDay 
-    ? { bg: '#F9F9F9', text: '#333333', accent: '#D72638' } 
+  const shareOnLine = (e) => {
+    e.stopPropagation();
+    const text = getShareText();
+    // LINEはテキストとURLを繋げて送るのが一般的
+    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+    window.open(lineUrl, '_blank');
+  };
+
+  // 指定された2色に切り替え
+  const colors = edoTime?.isDay
+    ? { bg: '#F9F9F9', text: '#333333', accent: '#D72638' }
     : { bg: '#1A1A1B', text: '#C0C0C0', accent: '#FFD700' };
 
   if (!isAudioEnabled) {
@@ -141,10 +151,7 @@ const EdoClockFinal = () => {
   }
 
   return (
-    <div 
-      style={containerStyle(colors.bg, colors.text)} 
-      onClick={() => { if(isAudioEnabled) audioRef.current?.play().then(() => audioRef.current.pause()); }}
-    >
+    <div style={containerStyle(colors.bg, colors.text)}>
       <header style={headerStyle}>
         {edoTime?.isDay ? "☀️ 陽の刻（昼）" : "🌙 陰の刻（夜）"}
       </header>
@@ -152,103 +159,8 @@ const EdoClockFinal = () => {
       <main style={mainStyle}>
         <div style={clockWrapperStyle}>
           <svg viewBox="0 0 100 100" style={svgStyle}>
-            <circle cx="50" cy="50" r="46" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.15" />
-            <circle 
-              cx="50" cy="50" r="46" 
-              fill="none" 
-              stroke={colors.accent} 
-              strokeWidth="2.5" 
-              strokeDasharray="289" 
-              strokeDashoffset={289 - (289 * (edoTime?.progress || 0) / 100)} 
-              style={{ transition: 'stroke-dashoffset 1s linear' }}
-              strokeLinecap="round"
-            />
-          </svg>
-          
-          <div style={tokiOverlayStyle}>
-            <div style={{...tokiNameStyle, color: colors.accent}}>{edoTime?.name}</div>
-            <div style={{...zodiacStyle, color: colors.text}}>{edoTime?.zodiac}の刻</div>
-          </div>
-        </div>
-
-        <div style={infoPanelStyle}>
-          <p style={{ fontSize: '0.9rem', letterSpacing: '1px', margin: '0' }}>次の一刻まで 約 {edoTime?.nextTokiIn} 分</p>
-          <p style={{ opacity: 0.6, fontSize: '0.75rem', marginTop: '5px', fontWeight: 'bold' }}>
-             {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-          </p>
-          <button onClick={shareOnX} style={{...shareButtonStyle, backgroundColor: colors.text, color: colors.bg}}>
-            𝕏 で刻を伝える
-          </button>
-        </div>
-      </main>
-
-      <footer style={footerStyle}>
-        <div>基準: {coords.lat === NIHONBASHI.lat ? "江戸（日本橋）" : "現在地"}</div>
-        <div style={{ marginTop: '5px' }}>効果音提供 OtoLogic</div>
-      </footer>
-    </div>
-  );
-};
-
-// --- スタイル定義（スマホ横向き対応） ---
-const fullScreenCenter = {
-  height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column',
-  alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9F9F9',
-  fontFamily: '"Yuji Syuku", serif', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
-};
-
-const startButtonStyle = {
-  marginTop: '2rem', padding: '12px 40px', fontSize: '1.2rem',
-  backgroundColor: 'transparent', color: '#D72638', border: '2px solid #D72638',
-  borderRadius: '4px', cursor: 'pointer', fontFamily: '"Yuji Syuku", serif'
-};
-
-const containerStyle = (bg, text) => ({
-  backgroundColor: bg, color: text,
-  height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column',
-  fontFamily: '"Yuji Syuku", serif', transition: 'background-color 1.5s ease',
-  overflow: 'hidden', boxSizing: 'border-box'
-});
-
-const headerStyle = { padding: '10px', textAlign: 'center', fontSize: 'min(3vw, 0.8rem)', flexShrink: 0 };
-
-const mainStyle = { 
-  flex: 1, display: 'flex', flexDirection: 'column', 
-  alignItems: 'center', justifyContent: 'center', padding: '10px', overflow: 'hidden'
-};
-
-const clockWrapperStyle = {
-  position: 'relative',
-  width: 'min(70vw, 55vh)', // 画面の高さが低い横向きでも収まるように調整
-  height: 'min(70vw, 55vh)',
-  aspectRatio: '1 / 1'
-};
-
-const svgStyle = { transform: 'rotate(-90deg)', width: '100%', height: '100%' };
-
-const tokiOverlayStyle = {
-  position: 'absolute', top: '50%', left: '50%',
-  transform: 'translate(-50%, -50%)',
-  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-};
-
-const tokiNameStyle = {
-  writingMode: 'vertical-rl',
-  textOrientation: 'upright',
-  // 文字サイズを「円の大きさ（vh/vw）」に追従させる
-  fontSize: 'clamp(1.2rem, 12vh, 3.5rem)', 
-  fontWeight: 'normal',
-  lineHeight: '1.1',
-  whiteSpace: 'nowrap'
-};
-
-const zodiacStyle = { fontSize: 'clamp(0.7rem, 3vh, 1rem)', marginTop: '5px', opacity: 0.8 };
-
-const infoPanelStyle = { textAlign: 'center', marginTop: '1rem', flexShrink: 0 };
-const shareButtonStyle = {
-  marginTop: '10px', padding: '6px 20px', borderRadius: '25px', border: 'none',
-  cursor: 'pointer', fontSize: '0.7rem'
-};
-const footerStyle = { padding: '10px', textAlign: 'center', fontSize: '0.6rem', opacity: 0.6, flexShrink: 0 };
-
-export default EdoClockFinal;
+            {/* 背景の薄い円（レール） */}
+            <circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke={colors.accent
