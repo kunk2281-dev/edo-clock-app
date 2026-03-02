@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useReducer } from 'react';
 import SunCalc from 'suncalc';
 
 /**
- * 江戸時間（不定時法）スマホ最適化・2色切り替え版
+ * 江戸時間（不定時法）進捗レール可視化・スマホ最適化版
  */
 const EdoClockFinal = () => {
   const NIHONBASHI = { lat: 35.6839, lng: 139.7745 };
@@ -121,8 +121,8 @@ const EdoClockFinal = () => {
 
   // 指定された2色に切り替え
   const colors = edoTime?.isDay 
-    ? { bg: '#F9F9F9', text: '#333333', accent: '#D72638' } // 日の出(昼)
-    : { bg: '#1A1A1B', text: '#C0C0C0', accent: '#FFD700' }; // 日の入り(夜)
+    ? { bg: '#F9F9F9', text: '#333333', accent: '#D72638' } 
+    : { bg: '#1A1A1B', text: '#C0C0C0', accent: '#FFD700' };
 
   if (!isAudioEnabled) {
     return (
@@ -144,9 +144,20 @@ const EdoClockFinal = () => {
       <main style={mainStyle}>
         <div style={clockWrapperStyle}>
           <svg viewBox="0 0 100 100" style={svgStyle}>
-            <circle cx="50" cy="50" r="46" fill="none" stroke={colors.text} strokeWidth="0.1" opacity="0.1" />
+            {/* 背景の薄い円（レール） */}
             <circle 
-              cx="50" cy="50" r="46" fill="none" stroke={colors.accent} strokeWidth="2.5" 
+              cx="50" cy="50" r="46" 
+              fill="none" 
+              stroke={colors.accent} 
+              strokeWidth="1.5" 
+              opacity="0.15" 
+            />
+            {/* 進捗を示す濃い円 */}
+            <circle 
+              cx="50" cy="50" r="46" 
+              fill="none" 
+              stroke={colors.accent} 
+              strokeWidth="2.5" 
               strokeDasharray="289" 
               strokeDashoffset={289 - (289 * (edoTime?.progress || 0) / 100)} 
               style={{ transition: 'stroke-dashoffset 1s linear, stroke 1.5s ease' }}
@@ -156,7 +167,7 @@ const EdoClockFinal = () => {
           
           <div style={tokiOverlayStyle}>
             <div style={{...tokiNameStyle, color: colors.accent}}>{edoTime?.name}</div>
-            <div style={{...zodiacStyle, color: colors.text, opacity: 0.8}}>
+            <div style={{...zodiacStyle, color: colors.text}}>
               {edoTime?.zodiac}の刻
             </div>
           </div>
@@ -210,8 +221,8 @@ const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItem
 
 const clockWrapperStyle = {
  position: 'relative',
- width: 'min(80vw, 45vh)', // スマホでの最大幅を少し拡大
- height: 'min(80vw, 45vh)',
+ width: 'min(70vw, 40vh)', // 重なり防止のため少しサイズを絞る
+ height: 'min(70vw, 40vh)',
  margin: '0 auto'
 };
 
@@ -226,25 +237,28 @@ const tokiOverlayStyle = {
  alignItems: 'center',
  justifyContent: 'center',
  width: '100%',
- height: '100%'
+ height: '100%',
+ padding: '20px',
+ boxSizing: 'border-box'
 };
 
 const tokiNameStyle = {
  writingMode: 'vertical-rl',
  textOrientation: 'upright',
- // clampの下限値を少し下げ、最大値を円の高さの60%程度に制限してはみ出しを防止
- fontSize: 'clamp(1.5rem, 12vw, 3.5rem)', 
- maxHeight: '70%', 
+ // iPhone SEなどの小さい画面でもはみ出さないサイズに調整
+ fontSize: 'clamp(1.5rem, 10vw, 3rem)', 
+ maxHeight: '65%', 
  fontWeight: 'normal',
  lineHeight: '1',
- letterSpacing: '0.02em',
+ letterSpacing: '0.05em',
  whiteSpace: 'nowrap',
  transition: 'color 1.5s ease'
 };
 
 const zodiacStyle = {
- fontSize: 'clamp(0.7rem, 3.5vw, 0.9rem)',
+ fontSize: 'clamp(0.7rem, 3vw, 0.85rem)',
  marginTop: '10px',
+ opacity: 0.8,
  writingMode: 'horizontal-tb',
  transition: 'color 1.5s ease'
 };
