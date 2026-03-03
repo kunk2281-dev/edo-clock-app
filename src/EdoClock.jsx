@@ -3,13 +3,11 @@ import SunCalc from 'suncalc';
 
 /**
  * 江戸時間（不定時法）進捗レール可視化・スマホ最適化版
- * 投げ銭ボタン（お茶代を奢る）追加
  */
 const EdoClockFinal = () => {
   const NIHONBASHI = { lat: 35.6839, lng: 139.7745 };
   const STRIPE_URL = "https://donate.stripe.com/14A14pdw9fCA6pHcNBdby04";
   
-  // State管理
   const [edoTime, setEdoTime] = useState(null);
   const [coords, setCoords] = useState(NIHONBASHI);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
@@ -20,7 +18,6 @@ const EdoClockFinal = () => {
   const audioRef = useRef(null);
   const timerRef = useRef(null);
 
-  // 1. Google Fonts の読み込みを動的に追加
   useEffect(() => {
     if (!document.getElementById('google-font-yuji')) {
       const link = document.createElement('link');
@@ -44,7 +41,6 @@ const EdoClockFinal = () => {
     const times = SunCalc.getTimes(date, lat, lng);
     const sunrise = times.sunrise;
     const sunset = times.sunset;
-
     const isDay = date >= sunrise && date < sunset;
    
     let periodStart, periodEnd, names, zodiacs;
@@ -157,36 +153,26 @@ const EdoClockFinal = () => {
       <main style={mainStyle}>
         <div style={clockWrapperStyle}>
           <svg viewBox="0 0 100 100" style={svgStyle}>
+            <circle cx="50" cy="50" r="46" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.15" />
             <circle
-              cx="50" cy="50" r="46"
-              fill="none"
-              stroke={colors.accent}
-              strokeWidth="1.5"
-              opacity="0.15"
-            />
-            <circle
-              cx="50" cy="50" r="46"
-              fill="none"
-              stroke={colors.accent}
-              strokeWidth="2.5"
+              cx="50" cy="50" r="46" fill="none" stroke={colors.accent} strokeWidth="2.5"
               strokeDasharray="289"
               strokeDashoffset={289 - (289 * (edoTime?.progress || 0) / 100)}
               style={{ transition: 'stroke-dashoffset 1s linear, stroke 1.5s ease' }}
               strokeLinecap="round"
             />
           </svg>
-         
           <div style={tokiOverlayStyle}>
             <div style={{...tokiNameStyle, color: colors.accent}}>{edoTime?.name}</div>
-            <div style={{...zodiacStyle, color: colors.text}}>
-              {edoTime?.zodiac}の刻
-            </div>
+            <div style={{...zodiacStyle, color: colors.text}}>{edoTime?.zodiac}の刻</div>
           </div>
         </div>
 
+        {/* --- 鐘のボタンセクション --- */}
         <div style={bellButtonContainer}>
           <button onClick={playBell} style={bellButtonStyle} title="鐘を鳴らす">
             <img src="/Gemini_Generated_Kane.png" alt="梵鐘" style={bellImageStyle} />
+            <span style={{...bellLabelStyle, color: colors.text}}>鐘を撞く</span>
           </button>
         </div>
 
@@ -195,23 +181,14 @@ const EdoClockFinal = () => {
           <p style={{ opacity: 0.6, fontSize: '0.75rem', marginTop: '4px', fontWeight: 'bold' }}>
              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
-         
           <div style={buttonGroupStyle}>
-            <button onClick={shareOnX} style={{...shareButtonStyle, backgroundColor: colors.text, color: colors.bg}}>
-              𝕏 で伝える
-            </button>
-            <button onClick={shareOnLine} style={{...shareButtonStyle, backgroundColor: '#06C755', color: '#FFFFFF', border: 'none'}}>
-              LINEで送る
-            </button>
+            <button onClick={shareOnX} style={{...shareButtonStyle, backgroundColor: colors.text, color: colors.bg}}>𝕏 で伝える</button>
+            <button onClick={shareOnLine} style={{...shareButtonStyle, backgroundColor: '#06C755', color: '#FFFFFF', border: 'none'}}>LINEで送る</button>
           </div>
-
-          {/* --- 投げ銭箱（お茶代を奢る）セクション --- */}
           <div style={donationContainerStyle}>
             <a href={STRIPE_URL} target="_blank" rel="noopener noreferrer" style={donationLinkStyle}>
               <img src="/nagesenbako.png" alt="投げ銭箱" style={donationImageStyle} />
-              <span style={{ fontSize: '0.8rem', display: 'block', marginTop: '4px', opacity: 0.9 }}>
-                わちきにお茶代を奢る🍵
-              </span>
+              <span style={{ fontSize: '0.8rem', display: 'block', marginTop: '4px', opacity: 0.9 }}>わちきにお茶代を奢る🍵</span>
             </a>
           </div>
         </div>
@@ -227,155 +204,37 @@ const EdoClockFinal = () => {
   );
 };
 
-// --- スタイル定義 ---
-const fullScreenCenter = {
-  height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column',
-  alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9F9F9',
-  color: '#333333', fontFamily: '"Yuji Syuku", serif', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
-};
-
-const startButtonStyle = {
-  marginTop: '2rem', padding: '12px 40px', fontSize: '1.2rem',
-  backgroundColor: 'transparent', color: '#D72638', border: '2px solid #D72638',
-  borderRadius: '4px', cursor: 'pointer', fontFamily: '"Yuji Syuku", serif'
-};
-
-const containerStyle = (bg, text) => ({
-  backgroundColor: bg,
-  color: text,
-  height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column',
-  fontFamily: '"Yuji Syuku", serif', transition: 'background-color 1.5s ease, color 1.5s ease',
-  overflow: 'hidden', boxSizing: 'border-box'
-});
-
+// --- スタイル定義（主な変更点） ---
+const fullScreenCenter = { height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9F9F9', color: '#333333', fontFamily: '"Yuji Syuku", serif', textAlign: 'center', padding: '20px', boxSizing: 'border-box' };
+const startButtonStyle = { marginTop: '2rem', padding: '12px 40px', fontSize: '1.2rem', backgroundColor: 'transparent', color: '#D72638', border: '2px solid #D72638', borderRadius: '4px', cursor: 'pointer', fontFamily: '"Yuji Syuku", serif' };
+const containerStyle = (bg, text) => ({ backgroundColor: bg, color: text, height: '100dvh', width: '100vw', display: 'flex', flexDirection: 'column', fontFamily: '"Yuji Syuku", serif', transition: 'background-color 1.5s ease, color 1.5s ease', overflow: 'hidden', boxSizing: 'border-box' });
 const headerStyle = { padding: '10px 10px 5px', textAlign: 'center', fontSize: '0.8rem', letterSpacing: '2px', flexShrink: 0 };
-
-const mainStyle = { 
-  flex: 1, 
-  display: 'flex', 
-  flexDirection: 'column', 
-  alignItems: 'center', 
-  justifyContent: 'flex-start',
-  padding: '10px 10px 0',
-  overflowY: 'auto' 
-};
-
-const clockWrapperStyle = {
-  position: 'relative',
-  width: 'min(60vw, 35vh)',
-  height: 'min(60vw, 35vh)',
-  margin: '10px auto'
-};
-
+const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '10px 10px 0', overflowY: 'auto' };
+const clockWrapperStyle = { position: 'relative', width: 'min(60vw, 35vh)', height: 'min(60vw, 35vh)', margin: '10px auto' };
 const svgStyle = { transform: 'rotate(-90deg)', width: '100%', height: '100%' };
+const tokiOverlayStyle = { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', padding: '10px', boxSizing: 'border-box' };
+const tokiNameStyle = { writingMode: 'vertical-rl', textOrientation: 'upright', fontSize: 'clamp(1.2rem, 8vw, 2.5rem)', maxHeight: '65%', fontWeight: 'normal', lineHeight: '1', letterSpacing: '0.05em', whiteSpace: 'nowrap', transition: 'color 1.5s ease' };
+const zodiacStyle = { fontSize: 'clamp(0.7rem, 3vw, 0.85rem)', marginTop: '5px', opacity: 0.8, writingMode: 'horizontal-tb', transition: 'color 1.5s ease' };
 
-const tokiOverlayStyle = {
-  position: 'absolute',
-  top: '50%', left: '50%',
-  transform: 'translate(-50%, -50%)',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  padding: '10px',
-  boxSizing: 'border-box'
+const bellButtonContainer = { marginTop: '5px', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 20 };
+const bellButtonStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '0px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', outline: 'none', WebkitTapHighlightColor: 'transparent' };
+const bellImageStyle = { width: '90px', height: '90px', objectFit: 'contain', filter: 'drop-shadow(0px 3px 6px rgba(0,0,0,0.3))' };
+
+// 文字を画像に近づけるための設定
+const bellLabelStyle = {
+  fontSize: '0.7rem',
+  marginTop: '-12px', // ★ ネガティブマージンで鐘の画像に近づける
+  opacity: 0.9,
+  letterSpacing: '0.1em',
+  fontWeight: 'bold'
 };
 
-const tokiNameStyle = {
-  writingMode: 'vertical-rl',
-  textOrientation: 'upright',
-  fontSize: 'clamp(1.2rem, 8vw, 2.5rem)',
-  maxHeight: '65%',
-  fontWeight: 'normal',
-  lineHeight: '1',
-  letterSpacing: '0.05em',
-  whiteSpace: 'nowrap',
-  transition: 'color 1.5s ease'
-};
-
-const zodiacStyle = {
-  fontSize: 'clamp(0.7rem, 3vw, 0.85rem)',
-  marginTop: '5px',
-  opacity: 0.8,
-  writingMode: 'horizontal-tb',
-  transition: 'color 1.5s ease'
-};
-
-const bellButtonContainer = {
-  marginTop: '10px',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  zIndex: 20
-};
-
-const bellButtonStyle = {
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  padding: '5px',
-  borderRadius: '50%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  outline: 'none'
-};
-
-const bellImageStyle = {
-  width: '100px',
-  height: '100px',
-  objectFit: 'contain',
-  filter: 'drop-shadow(0px 3px 6px rgba(0,0,0,0.3))'
-};
-
-const infoPanelStyle = { textAlign: 'center', marginTop: '0.5rem', zIndex: 10 };
-
-const buttonGroupStyle = {
-  display: 'flex',
-  gap: '10px',
-  justifyContent: 'center',
-  marginTop: '10px',
-  flexWrap: 'wrap'
-};
-
-const shareButtonStyle = {
-  padding: '8px 18px', borderRadius: '25px', border: 'none',
-  cursor: 'pointer', fontSize: '0.75rem', zIndex: 100, transition: 'all 0.3s ease',
-  fontWeight: 'bold', fontFamily: 'sans-serif' 
-};
-
-// 投げ銭箱のスタイル
-const donationContainerStyle = {
-  marginTop: '25px',
-  marginBottom: '10px',
-  display: 'flex',
-  justifyContent: 'center'
-};
-
-const donationLinkStyle = {
-  textDecoration: 'none',
-  color: 'inherit',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  transition: 'transform 0.2s ease'
-};
-
-const donationImageStyle = {
-  width: '60px',
-  height: 'auto',
-  cursor: 'pointer',
-  filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.2))'
-};
-
-const footerStyle = { 
-  padding: '10px 15px 25px',
-  textAlign: 'center', 
-  fontSize: '0.65rem', 
-  opacity: 0.6, 
-  flexShrink: 0 
-};
+const infoPanelStyle = { textAlign: 'center', marginTop: '0.2rem', zIndex: 10 };
+const buttonGroupStyle = { display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '10px', flexWrap: 'wrap' };
+const shareButtonStyle = { padding: '8px 18px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', zIndex: 100, transition: 'all 0.3s ease', fontWeight: 'bold', fontFamily: 'sans-serif' };
+const donationContainerStyle = { marginTop: '20px', marginBottom: '10px', display: 'flex', justifyContent: 'center' };
+const donationLinkStyle = { textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'transform 0.2s ease' };
+const donationImageStyle = { width: '55px', height: 'auto', cursor: 'pointer', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.2))' };
+const footerStyle = { padding: '10px 15px 25px', textAlign: 'center', fontSize: '0.65rem', opacity: 0.6, flexShrink: 0 };
 
 export default EdoClockFinal;
